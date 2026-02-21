@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>آینه من | My Mirror</title>
+    
+    <!-- PWA / Mobile Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1154/1154972.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;400;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-color: #000000;
+        --text-color: #e5e5e5;
+        --accent-color: #0055ff;
+        --nebula-opacity: 0.6;
+        --star-color: #fff;
+      }
+
+      .theme-light {
+        --bg-color: #ffffff;
+        --text-color: #000000;
+        --accent-color: #1d4ed8;
+        --nebula-opacity: 0.15;
+        --star-color: #94a3b8;
+      }
+
+      body {
+        font-family: 'JetBrains Mono', monospace;
+        background: var(--bg-color);
+        height: 100dvh;
+        overflow: hidden;
+        color: var(--text-color);
+        touch-action: manipulation;
+        transition: background 0.5s ease, color 0.5s ease;
+      }
+      
+      .stars-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 50%, var(--bg-color) 0%, var(--bg-color) 100%);
+      }
+
+      .nebula {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(circle at 20% 30%, rgba(0, 85, 255, 0.05) 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+          radial-gradient(circle at 50% 50%, rgba(20, 20, 40, 0.2) 0%, transparent 80%);
+        filter: blur(60px);
+        animation: nebulaPulse 20s ease-in-out infinite alternate;
+        opacity: var(--nebula-opacity);
+      }
+
+      #stars, #stars2, #stars3 {
+        background: transparent;
+        animation: animStar 200s linear infinite;
+      }
+      
+      #stars { 
+        width: 1px; height: 1px; 
+        box-shadow: 100px 200px var(--star-color), 500px 100px #7dd3fc, 900px 200px var(--star-color), 1300px 300px #fde047, 1700px 100px var(--star-color), 450px 350px var(--star-color), 850px 150px #818cf8, 1250px 450px var(--star-color), 1650px 650px var(--star-color), 550px 50px var(--star-color), 1550px 450px #7dd3fc; 
+      }
+      #stars2 { 
+        width: 2px; height: 2px; 
+        box-shadow: 200px 400px var(--star-color), 600px 100px #a5b4fc, 1200px 300px var(--star-color), 100px 800px var(--star-color), 800px 500px var(--star-color), 1700px 400px var(--star-color); 
+      }
+      #stars3 { 
+        width: 3px; height: 3px; 
+        box-shadow: 300px 600px var(--star-color), 900px 200px #fef08a, 500px 300px var(--star-color); 
+      }
+
+      @keyframes animStar {
+        from { transform: translateY(0px); }
+        to { transform: translateY(-2000px); }
+      }
+
+      @keyframes nebulaPulse {
+        from { transform: scale(1); }
+        to { transform: scale(1.1); }
+      }
+
+      /* Infinite Neon Pulse for Chat Edges */
+      @keyframes neon-pulse {
+        0%, 100% { 
+          border-color: rgba(59, 130, 246, 0.3); 
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.1), inset 0 0 5px rgba(59, 130, 246, 0.05); 
+        }
+        50% { 
+          border-color: rgba(59, 130, 246, 0.8); 
+          box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), inset 0 0 10px rgba(59, 130, 246, 0.1); 
+        }
+      }
+      .neon-border-pulse {
+        animation: neon-pulse 3s infinite ease-in-out;
+      }
+
+      /* Neural Thinking Flick */
+      @keyframes subtle-flicker {
+        0%, 100% { filter: brightness(1) contrast(1); }
+        33% { filter: brightness(1.03) contrast(1.01); }
+        66% { filter: brightness(0.98) contrast(0.99); }
+      }
+      .thinking-flicker {
+        animation: subtle-flicker 0.2s infinite;
+      }
+
+      /* Neural Materialization Shimmer */
+      @keyframes shimmer {
+        0% { transform: translateX(-150%) skewX(-25deg); }
+        100% { transform: translateX(150%) skewX(-25deg); }
+      }
+      .animate-shimmer {
+        animation: shimmer 2.5s ease-out forwards;
+      }
+
+      /* Text Materialization Glitch-in */
+      @keyframes materialize {
+        0% { opacity: 0; transform: translateY(4px); filter: blur(2px); }
+        100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+      }
+      .animate-materialize {
+        animation: materialize 0.5s ease-out forwards;
+      }
+
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+      ::-webkit-scrollbar-thumb { background: rgba(0, 85, 255, 0.2); border-radius: 10px; }
+    </style>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div class="stars-container">
+      <div class="nebula"></div>
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
+    <script>
+      (function() {
+        try {
+          const profile = localStorage.getItem('nexus_neural_profile');
+          if (profile) {
+            const { themePreference } = JSON.parse(profile);
+            if (themePreference === 'light') {
+              document.body.classList.add('theme-light');
+              document.body.classList.remove('dark');
+            } else {
+              document.body.classList.add('dark');
+              document.body.classList.remove('theme-light');
+            }
+          } else {
+            document.body.classList.add('dark');
+          }
+        } catch (e) {
+          document.body.classList.add('dark');
+        }
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
