@@ -144,6 +144,7 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
   const [saturation, setSaturation] = useState(100);
   const [hueRotate, setHueRotate] = useState(0);
   const [rotation, setRotation] = useState(0);
+  const [aspectRatio, setAspectRatio] = useState('auto');
   const [activeVisualPreset, setActiveVisualPreset] = useState(VISUAL_PRESETS[0]);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -194,6 +195,7 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
     setSaturation(100);
     setHueRotate(0);
     setRotation(0);
+    setAspectRatio('auto');
     setActiveVisualPreset(VISUAL_PRESETS[0]);
   };
 
@@ -353,14 +355,17 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
               <div className="mt-6 space-y-6">
                 <div className="rounded-[2rem] overflow-hidden border border-black/10 dark:border-white/10 bg-black/80 relative group shadow-2xl animate-in zoom-in-95 duration-1000">
                   {response.mediaType === 'image' && (
-                    <div className="flex items-center justify-center bg-zinc-950 min-h-[400px] overflow-hidden p-4 relative">
+                    <div 
+                      className="flex items-center justify-center bg-zinc-950 min-h-[400px] overflow-hidden p-4 relative transition-all duration-700"
+                      style={{ aspectRatio: aspectRatio === 'auto' ? 'auto' : aspectRatio.replace(':', '/') }}
+                    >
                       <img 
                         src={response.mediaUrl} 
                         style={{ 
                           filter: `${activeVisualPreset.filter} brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hueRotate}deg)`, 
                           transform: `rotate(${rotation}deg)` 
                         }}
-                        className="max-w-full max-h-[75vh] object-contain transition-all duration-1000 rounded-2xl relative z-10" 
+                        className={`max-w-full max-h-[75vh] transition-all duration-1000 rounded-2xl relative z-10 ${aspectRatio === 'auto' ? 'object-contain' : 'object-cover w-full h-full'}`} 
                         alt="Nexus Generation" 
                       />
                       {showShimmer && (
@@ -436,6 +441,27 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
                             <span className="text-[9px] text-blue-700 dark:text-blue-400 font-mono">{saturation}%</span>
                           </div>
                           <input type="range" min="0" max="200" value={saturation} onChange={(e) => setSaturation(parseInt(e.target.value))} className="w-full h-1 bg-black/20 dark:bg-white/10 rounded-full appearance-none cursor-pointer accent-blue-600" />
+                        </div>
+                        <div className="space-y-3 col-span-full">
+                          <div className="flex justify-between items-center px-1 mb-2">
+                            <span className="text-[9px] uppercase tracking-widest text-slate-700 dark:text-gray-500 font-bold">نسبت ابعاد</span>
+                            <span className="text-[9px] text-blue-700 dark:text-blue-400 font-mono uppercase">{aspectRatio}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {['auto', '1:1', '4:3', '16:9', '9:16'].map((ratio) => (
+                              <button
+                                key={ratio}
+                                onClick={() => setAspectRatio(ratio)}
+                                className={`px-4 py-2 rounded-xl text-[9px] uppercase tracking-widest border transition-all ${
+                                  aspectRatio === ratio 
+                                  ? 'bg-blue-600/20 border-blue-500 text-blue-700 dark:text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' 
+                                  : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 text-slate-600 dark:text-gray-500 hover:border-black/20 dark:hover:border-white/20'
+                                }`}
+                              >
+                                {ratio === 'auto' ? 'اصلی' : ratio}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
