@@ -49,6 +49,11 @@ export interface UserProfile {
   interests: string;
 }
 
+export interface Feedback {
+  rating: number; // 1-5
+  comment?: string;
+}
+
 export interface AiResponse {
   id: string;
   text?: string;
@@ -57,4 +62,5 @@ export interface AiResponse {
   emotion?: Emotion;
   grounding?: GroundingLink[];
   timestamp: number;
+  feedback?: Feedback;
 }

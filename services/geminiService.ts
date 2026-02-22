@@ -3,8 +3,8 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { GenerationMode, AiResponse, Emotion, Attachment, UserProfile } from '../types';
 
 const getClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API_KEY_MISSING");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   return new GoogleGenAI({ apiKey });
 };
 
@@ -55,7 +55,7 @@ OPERATING RULES:
 export const generateResponse = async (
   prompt: string, 
   mode: GenerationMode, 
-  attachment?: Attachment,
+  attachments: Attachment[] = [],
   profile?: UserProfile,
   history: AiResponse[] = []
 ): Promise<AiResponse> => {
@@ -73,12 +73,14 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
   try {
     if (mode === GenerationMode.IMAGE) {
       const parts: any[] = [];
-      if (attachment) parts.push({ inlineData: { data: attachment.data, mimeType: attachment.mimeType } });
+      attachments.forEach(att => {
+        parts.push({ inlineData: { data: att.data, mimeType: att.mimeType } });
+      });
       if (prompt) parts.push({ text: prompt });
       
       const response = await ai.models.generateContent({ 
         model: 'gemini-2.5-flash-image', 
-        contents: [{ parts }],
+        contents: { role: 'user', parts },
         config: { systemInstruction: personalizedInstruction }
       });
       
@@ -110,7 +112,9 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
     }
 
     const parts: any[] = [];
-    if (attachment) parts.push({ inlineData: { data: attachment.data, mimeType: attachment.mimeType } });
+    attachments.forEach(att => {
+      parts.push({ inlineData: { data: att.data, mimeType: att.mimeType } });
+    });
     parts.push({ text: prompt || "Reflect on the silence." });
 
     const res = await ai.models.generateContent({
@@ -136,6 +140,61 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
   }
 };
 
+export const upscaleImage = async (
+  prompt: string,
+  originalImage?: Attachment,
+  profile?: UserProfile
+): Promise<AiResponse> => {
+  const ai = getClient();
+  const responseId = `upscale-${Math.random().toString(36).substring(7)}`;
+  const timestamp = Date.now();
+
+  const personalizedInstruction = `${NEXUS_SYSTEM_INSTRUCTION}
+User-Specific Context for this session:
+- User Name: ${profile?.name || 'the seeker'}
+- Preferred Tone Preference: ${profile?.tonePreference || 'poetic'}
+MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropriate. Strictly adopt the ${profile?.tonePreference || 'poetic'} tone.`;
+
+  try {
+    const parts: any[] = [];
+    if (originalImage) {
+      parts.push({ inlineData: { data: originalImage.data, mimeType: originalImage.mimeType } });
+    }
+    parts.push({ text: `Upscale and enhance this image with extreme detail and high resolution. Original prompt/context: ${prompt}` });
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-image-preview',
+      contents: { role: 'user', parts },
+      config: {
+        systemInstruction: personalizedInstruction,
+        imageConfig: {
+          aspectRatio: "1:1",
+          imageSize: "2K"
+        }
+      }
+    });
+
+    let imageUrl = null;
+    let text = "";
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+      else if (part.text) text += part.text;
+    }
+
+    return {
+      id: responseId,
+      timestamp,
+      text: text || "The neural grid has synthesized a high-fidelity visual reflection.",
+      mediaUrl: imageUrl || undefined,
+      mediaType: 'image',
+      emotion: 'SURPRISE'
+    };
+  } catch (e: any) {
+    console.error("Nexus Upscale Error:", e);
+    throw e;
+  }
+};
+
 export const translateToPersian = async (text: string): Promise<string> => {
   const ai = getClient();
   try {
@@ -153,7 +212,7 @@ export const translateToPersian = async (text: string): Promise<string> => {
   }
 };
 
-export const generateTTS = async (text: string): Promise<string | null> => {
+export const generateTTS = async (text: string, voiceName: string = 'Kore', speakingRate: number = 1.0): Promise<string | null> => {
   const ai = getClient();
   try {
     const response = await ai.models.generateContent({
@@ -163,8 +222,8 @@ export const generateTTS = async (text: string): Promise<string | null> => {
         responseModalities: [Modality.AUDIO], 
         speechConfig: { 
           voiceConfig: { 
-            prebuiltVoiceConfig: { voiceName: 'Kore' } 
-          } 
+            prebuiltVoiceConfig: { voiceName } 
+          }
         } 
       }
     });
