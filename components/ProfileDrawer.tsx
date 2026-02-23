@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { UserProfile } from '../types';
 
 interface ProfileDrawerProps {
@@ -11,6 +11,48 @@ interface ProfileDrawerProps {
 }
 
 const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ isOpen, onClose, profile, onUpdate, syncScore = 0 }) => {
+  const [isCapturing, setIsCapturing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const startCamera = async () => {
+    try {
+      setIsCapturing(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Nexus: Camera access failed", err);
+      setIsCapturing(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCapturing(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      if (context) {
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
+        context.drawImage(videoRef.current, 0, 0);
+        const dataUrl = canvasRef.current.toDataURL('image/png');
+        // Here we could update the profile with the image if UserProfile had a photo field
+        // For now, let's just log it or add it to interests as a placeholder
+        console.log("Nexus: Captured photo", dataUrl);
+        stopCamera();
+      }
+    }
+  };
+
   const handleChange = (field: keyof UserProfile, value: string) => {
     onUpdate({ ...profile, [field]: value });
   };
@@ -26,7 +68,10 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ isOpen, onClose, profile,
         languagePreference: 'auto', 
         tonePreference: 'poetic', 
         themePreference: profile.themePreference,
-        interests: '' 
+        interests: '',
+        imageSize: '1K',
+        aspectRatio: '1:1',
+        imageStyle: 'cinematic'
       });
     }
   };
@@ -62,6 +107,30 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ isOpen, onClose, profile,
           </div>
           
           <div className="flex-grow overflow-y-auto py-8 px-6 space-y-8 scrollbar-hide">
+            <div className="space-y-4">
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block">Neural Identity Capture</label>
+              <div className="relative w-full aspect-video bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center group">
+                {isCapturing ? (
+                  <>
+                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
+                      <button onClick={capturePhoto} className="px-4 py-2 bg-blue-600 text-white rounded-full text-[10px] uppercase tracking-widest font-bold shadow-lg shadow-blue-600/20">Capture</button>
+                      <button onClick={stopCamera} className="px-4 py-2 bg-white/10 text-white rounded-full text-[10px] uppercase tracking-widest font-bold backdrop-blur-md">Cancel</button>
+                    </div>
+                  </>
+                ) : (
+                  <button 
+                    onClick={startCamera}
+                    className="flex flex-col items-center gap-3 text-gray-500 group-hover:text-blue-400 transition-colors"
+                  >
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span className="text-[10px] uppercase tracking-widest">Initialize Camera</span>
+                  </button>
+                )}
+                <canvas ref={canvasRef} className="hidden" />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-[10px] text-gray-500 uppercase tracking-widest block">Subject Identity</label>
               <input 
@@ -103,6 +172,61 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({ isOpen, onClose, profile,
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block">Visual Resolution (Image Size)</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['1K', '2K', '4K'].map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => handleChange('imageSize', size as any)}
+                    className={`px-3 py-2 rounded-lg text-[9px] uppercase tracking-widest border transition-all ${
+                      profile.imageSize === size 
+                      ? 'bg-cyan-600/20 border-cyan-500 text-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.2)]' 
+                      : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block">Visual Aspect Ratio</label>
+              <div className="grid grid-cols-5 gap-1">
+                {['1:1', '3:4', '4:3', '9:16', '16:9'].map((ratio) => (
+                  <button
+                    key={ratio}
+                    onClick={() => handleChange('aspectRatio', ratio as any)}
+                    className={`px-1 py-2 rounded-lg text-[8px] uppercase tracking-tighter border transition-all ${
+                      profile.aspectRatio === ratio 
+                      ? 'bg-purple-600/20 border-purple-500 text-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.2)]' 
+                      : 'bg-white/5 border-white/10 text-gray-500 hover:border-white/20'
+                    }`}
+                  >
+                    {ratio}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-gray-500 uppercase tracking-widest block">Visual Style Preset</label>
+              <select 
+                value={profile.imageStyle}
+                onChange={(e) => handleChange('imageStyle', e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500/50 outline-none transition-all font-light text-sm appearance-none"
+              >
+                <option value="cinematic">Cinematic</option>
+                <option value="digital art">Digital Art</option>
+                <option value="photorealistic">Photorealistic</option>
+                <option value="anime">Anime</option>
+                <option value="oil painting">Oil Painting</option>
+                <option value="cyberpunk">Cyberpunk</option>
+                <option value="minimalist">Minimalist</option>
+              </select>
             </div>
 
             <div className="space-y-2">

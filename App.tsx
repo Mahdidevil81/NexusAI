@@ -19,7 +19,10 @@ const defaultProfile: UserProfile = {
   languagePreference: 'auto',
   tonePreference: 'poetic',
   themePreference: 'dark',
-  interests: ''
+  interests: '',
+  imageSize: '1K',
+  aspectRatio: '1:1',
+  imageStyle: 'cinematic'
 };
 
 const NeuralLoading = () => (
@@ -121,7 +124,79 @@ const App: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
-  
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
+  const [permissions, setPermissions] = useState({ camera: false, microphone: false });
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          const base64Content = base64data.split(',')[1];
+          const newAttachment: Attachment = {
+            name: `voice-note-${Date.now()}.wav`,
+            data: base64Content,
+            mimeType: 'audio/wav'
+          };
+          setAttachments(prev => [...prev, newAttachment].slice(-5));
+        };
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Nexus: Recording failed", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
+  useEffect(() => {
+    const requestPermissions = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setPermissions({ camera: true, microphone: true });
+        // Stop the initial stream immediately after getting permissions
+        stream.getTracks().forEach(track => track.stop());
+      } catch (err) {
+        console.warn("Nexus: Permissions denied or not available", err);
+      }
+    };
+    requestPermissions();
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -515,12 +590,23 @@ const App: React.FC = () => {
             
             <button 
               type="button" 
-              onClick={toggleDictation}
-              className={`p-2.5 transition-all duration-300 rounded-full ${isDictating ? 'text-red-500 bg-red-500/10 animate-pulse scale-110' : 'text-gray-600 dark:text-gray-500 hover:text-blue-600'}`}
-              title="Voice Dictation"
+              onClick={toggleRecording}
+              className={`p-2.5 transition-all duration-300 rounded-full ${isRecording ? 'text-red-500 bg-red-500/10 animate-pulse scale-110' : 'text-gray-600 dark:text-gray-500 hover:text-blue-600'}`}
+              title="Record Audio"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+
+            <button 
+              type="button" 
+              onClick={toggleDictation}
+              className={`p-2.5 transition-all duration-300 rounded-full ${isDictating ? 'text-blue-500 bg-blue-500/10 animate-pulse scale-110' : 'text-gray-600 dark:text-gray-500 hover:text-blue-600'}`}
+              title="Voice Dictation"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </button>
 

@@ -3,7 +3,8 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { GenerationMode, AiResponse, Emotion, Attachment, UserProfile } from '../types';
 
 const getClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Prefer the user-selected API key (API_KEY) over the default (GEMINI_API_KEY)
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   return new GoogleGenAI({ apiKey });
 };
@@ -77,11 +78,17 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
         parts.push({ inlineData: { data: att.data, mimeType: att.mimeType } });
       });
       if (prompt) parts.push({ text: prompt });
+      if (profile?.imageStyle) parts.push({ text: `Desired visual style: ${profile.imageStyle}` });
       
       const response = await ai.models.generateContent({ 
         model: 'gemini-2.5-flash-image', 
         contents: { role: 'user', parts },
-        config: { systemInstruction: personalizedInstruction }
+        config: { 
+          systemInstruction: personalizedInstruction,
+          imageConfig: {
+            aspectRatio: profile?.aspectRatio || '1:1'
+          }
+        }
       });
       
       let imageUrl = null;
@@ -117,23 +124,26 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
     });
     parts.push({ text: prompt || "Reflect on the silence." });
 
-    const res = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: [{ role: 'user', parts }],
-      config: {
-        systemInstruction: personalizedInstruction,
-        thinkingConfig: { thinkingBudget: 4000 }
-      }
-    });
+    try {
+      const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: [{ role: 'user', parts }],
+        config: {
+          systemInstruction: personalizedInstruction,
+        }
+      });
 
-    const raw = res.text || "";
-    const eMatch = raw.match(/\[EMOTION: (\w+)\]/);
-    return { 
-      id: responseId, timestamp,
-      text: raw.replace(/\[EMOTION: \w+\]/, '').trim(), 
-      emotion: eMatch ? (eMatch[1] as Emotion) : 'NEUTRAL'
-    };
-
+      const raw = res.text || "";
+      const eMatch = raw.match(/\[EMOTION: (\w+)\]/);
+      return { 
+        id: responseId, timestamp,
+        text: raw.replace(/\[EMOTION: \w+\]/, '').trim(), 
+        emotion: eMatch ? (eMatch[1] as Emotion) : 'NEUTRAL'
+      };
+    } catch (e: any) {
+      console.error("Nexus Core Error:", e);
+      throw e;
+    }
   } catch (e: any) {
     console.error("Nexus Core Error:", e);
     throw e;
@@ -168,8 +178,8 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
       config: {
         systemInstruction: personalizedInstruction,
         imageConfig: {
-          aspectRatio: "1:1",
-          imageSize: "2K"
+          aspectRatio: profile?.aspectRatio || "1:1",
+          imageSize: profile?.imageSize || "2K"
         }
       }
     });
@@ -197,19 +207,19 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
 
 export const translateToPersian = async (text: string): Promise<string> => {
   const ai = getClient();
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: `Translate the following reflection into deep, poetic, and professional Persian (فارسی). Maintain the 'Nexus AI' visionary and empowering tone. Only provide the Persian text: \n\n${text}`,
-      config: {
-        systemInstruction: "You are the Persian linguistic core of Nexus. Translate with soul and depth."
-      }
-    });
-    return response.text || "Translation frequency failed to sync.";
-  } catch (e) {
-    console.error("Nexus Translation Error:", e);
-    return "The translation neural pathway is currently obstructed.";
-  }
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Translate the following reflection into deep, poetic, and professional Persian (فارسی). Maintain the 'Nexus AI' visionary and empowering tone. Only provide the Persian text: \n\n${text}`,
+        config: {
+          systemInstruction: "You are the Persian linguistic core of Nexus. Translate with soul and depth."
+        }
+      });
+      return response.text || "Translation frequency failed to sync.";
+    } catch (e: any) {
+      console.error("Nexus Translation Error:", e);
+      return "The translation neural pathway is currently obstructed.";
+    }
 };
 
 export const generateTTS = async (text: string, voiceName: string = 'Kore', speakingRate: number = 1.0): Promise<string | null> => {

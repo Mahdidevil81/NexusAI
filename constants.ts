@@ -29,3 +29,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
 export const INITIAL_LOGS = []; 
 export const SYSTEM_ACTIONS = []; 
 export const SYSTEM_TARGETS = [];
+
+// Watermark for Mahdi Devil
+export const WATERMARK_IMAGE = "https://i.ibb.co/v6mXmXy/devil-logo.png"; // Placeholder - User should replace with their actual image URL or base64
+

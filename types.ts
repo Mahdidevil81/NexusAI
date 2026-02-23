@@ -29,6 +29,7 @@ export enum GenerationMode {
 export type Emotion = 'NEUTRAL' | 'SAD' | 'HAPPY' | 'ANGRY' | 'FEAR' | 'SURPRISE' | 'LOVE';
 
 export type ImageSize = '1K' | '2K' | '4K';
+export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
 
 export interface Attachment {
   data: string; // Base64
@@ -47,6 +48,9 @@ export interface UserProfile {
   tonePreference: 'poetic' | 'visionary' | 'analytical' | 'casual';
   themePreference: 'light' | 'dark';
   interests: string;
+  imageSize: ImageSize;
+  aspectRatio: AspectRatio;
+  imageStyle: string;
 }
 
 export interface Feedback {

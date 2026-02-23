@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { AiResponse, GenerationMode } from '../types';
+import { WATERMARK_IMAGE } from '../constants';
 import { translateToPersian, generateTTS } from '../services/geminiService';
 
 interface CustomFilter {
@@ -260,30 +261,84 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
     if (!response?.mediaUrl || response.mediaType !== 'image') return;
     setIsSaving(true);
     const img = new Image();
+    const watermark = new Image();
     img.crossOrigin = "anonymous";
+    watermark.crossOrigin = "anonymous";
+    
     img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return setIsSaving(false);
-        const angleRad = (rotation * Math.PI) / 180;
-        const absCos = Math.abs(Math.cos(angleRad));
-        const absSin = Math.abs(Math.sin(angleRad));
-        canvas.width = img.width * absCos + img.height * absSin;
-        canvas.height = img.width * absSin + img.height * absCos;
-        ctx.filter = `${activeVisualPreset.filter} brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hueRotate}deg)`;
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(angleRad);
-        ctx.drawImage(img, -img.width / 2, -img.height / 2);
-        const link = document.createElement('a');
-        link.download = `nexus-reflection-${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } catch (e) {
-        console.error("Nexus Image: Export failed", e);
-      } finally {
-        setIsSaving(false);
-      }
+      watermark.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return setIsSaving(false);
+          
+          const angleRad = (rotation * Math.PI) / 180;
+          const absCos = Math.abs(Math.cos(angleRad));
+          const absSin = Math.abs(Math.sin(angleRad));
+          
+          canvas.width = img.width * absCos + img.height * absSin;
+          canvas.height = img.width * absSin + img.height * absCos;
+          
+          ctx.filter = `${activeVisualPreset.filter} brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hueRotate}deg)`;
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(angleRad);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          
+          // Reset filter for watermark
+          ctx.filter = 'none';
+          ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+          
+          // Draw Watermark at bottom right
+          const watermarkWidth = canvas.width * 0.15; // 15% of image width
+          const watermarkHeight = (watermark.height / watermark.width) * watermarkWidth;
+          const padding = 20;
+          
+          ctx.globalAlpha = 0.7;
+          ctx.drawImage(
+            watermark, 
+            canvas.width - watermarkWidth - padding, 
+            canvas.height - watermarkHeight - padding, 
+            watermarkWidth, 
+            watermarkHeight
+          );
+          ctx.globalAlpha = 1.0;
+
+          const link = document.createElement('a');
+          link.download = `nexus-reflection-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } catch (e) {
+          console.error("Nexus Image: Export failed", e);
+        } finally {
+          setIsSaving(false);
+        }
+      };
+      watermark.onerror = () => {
+        // If watermark fails, save without it
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return setIsSaving(false);
+          const angleRad = (rotation * Math.PI) / 180;
+          const absCos = Math.abs(Math.cos(angleRad));
+          const absSin = Math.abs(Math.sin(angleRad));
+          canvas.width = img.width * absCos + img.height * absSin;
+          canvas.height = img.width * absSin + img.height * absCos;
+          ctx.filter = `${activeVisualPreset.filter} brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hueRotate}deg)`;
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(angleRad);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          const link = document.createElement('a');
+          link.download = `nexus-reflection-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } catch (e) {
+          console.error("Nexus Image: Export failed", e);
+        } finally {
+          setIsSaving(false);
+        }
+      };
+      watermark.src = WATERMARK_IMAGE;
     };
     img.onerror = () => {
       console.error("Nexus Image: Resource load failed");
@@ -559,6 +614,16 @@ const AiResponsePanel: React.FC<AiResponsePanelProps> = ({ response, isTyping, o
                         }}
                         className={`max-w-full max-h-[75vh] transition-all duration-1000 rounded-2xl relative z-10 ${aspectRatio === 'auto' ? 'object-contain' : 'object-cover w-full h-full'}`} 
                         alt="Nexus Generation" 
+                      />
+                      {response.id.startsWith('upscale-') && (
+                        <div className="absolute top-8 left-8 z-30 px-3 py-1 bg-blue-600/80 backdrop-blur-md border border-blue-400/30 rounded-full shadow-lg animate-in fade-in zoom-in duration-500">
+                          <span className="text-[10px] font-bold text-white tracking-widest uppercase">2K Enhanced</span>
+                        </div>
+                      )}
+                      <img 
+                        src={WATERMARK_IMAGE} 
+                        className="absolute bottom-8 right-8 w-16 h-16 object-contain z-30 opacity-60 pointer-events-none"
+                        alt="Watermark"
                       />
                       {showShimmer && (
                         <div className="absolute inset-0 z-20 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer pointer-events-none"></div>

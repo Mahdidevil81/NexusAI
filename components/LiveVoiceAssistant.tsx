@@ -273,15 +273,6 @@ export const LiveVoiceAssistant: React.FC<LiveVoiceAssistantProps> = ({ isActive
         </div>
       </div>
 
-      {/* Immersive Background Logo */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <img 
-          src="https://raw.githubusercontent.com/MahdiDevil/Nexus-Assets/main/nexus-eye-logo.png" 
-          alt=""
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] object-contain opacity-[0.05] blur-sm bg-logo-rotate"
-        />
-      </div>
-
       <div className="relative z-10 flex flex-col items-center justify-center">
         <div className="relative w-80 h-80 mb-12 flex items-center justify-center">
           {/* Ambient Glow Background - Steady */}
@@ -304,29 +295,22 @@ export const LiveVoiceAssistant: React.FC<LiveVoiceAssistantProps> = ({ isActive
             </>
           )}
           
-          {/* Logo Container */}
+          {/* Central Neural Orb (Simplified) */}
           <div 
-            className={`relative w-64 h-64 transition-all duration-150 ${status === 'LISTENING' ? '' : 'opacity-50'}`}
+            className={`relative w-48 h-48 rounded-full transition-all duration-150 ${status === 'LISTENING' ? 'bg-blue-500/10 border border-blue-500/30' : 'bg-white/5 border border-white/10'}`}
             style={{
               transform: isSpeaking 
                 ? `scale(${1 + audioLevel * 0.35})` 
                 : (userAudioLevel > 0.05 ? `scale(${1 + userAudioLevel * 0.15})` : 'scale(1)'),
-              filter: isSpeaking 
-                ? `drop-shadow(0 0 ${15 + audioLevel * 40}px rgba(0, 150, 255, ${0.5 + audioLevel * 0.5})) drop-shadow(0 0 ${30 + audioLevel * 60}px rgba(180, 0, 255, ${0.3 + audioLevel * 0.4}))`
+              boxShadow: isSpeaking 
+                ? `0 0 ${20 + audioLevel * 50}px rgba(0, 150, 255, ${0.4 + audioLevel * 0.6}), inset 0 0 20px rgba(0, 150, 255, 0.2)` 
                 : (status === 'LISTENING' 
-                    ? `drop-shadow(0 0 ${15 + userAudioLevel * 20}px rgba(0, 150, 255, ${0.3 + userAudioLevel * 0.4}))` 
+                    ? `0 0 ${15 + userAudioLevel * 20}px rgba(0, 150, 255, ${0.2 + userAudioLevel * 0.3})` 
                     : 'none'),
-              opacity: isSpeaking ? 1 : (status === 'LISTENING' ? 1 : 0.5)
+              opacity: isSpeaking ? 1 : (status === 'LISTENING' ? 0.8 : 0.4)
             }}
           >
-            <img 
-              src="https://images.unsplash.com/photo-1614728263952-84ea256f9679?w=600&h=600&fit=crop&q=80" 
-              alt="Nexus Consciousness"
-              className="w-full h-full object-contain rounded-full border-2 border-blue-500/20"
-              onError={(e) => {
-                e.currentTarget.src = "https://raw.githubusercontent.com/MahdiDevil/Nexus-Assets/main/nexus-eye-logo.png";
-              }}
-            />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-600/20 animate-pulse"></div>
           </div>
 
           {/* Outer Ring */}
