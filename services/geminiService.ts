@@ -78,17 +78,11 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
         parts.push({ inlineData: { data: att.data, mimeType: att.mimeType } });
       });
       if (prompt) parts.push({ text: prompt });
-      if (profile?.imageStyle) parts.push({ text: `Desired visual style: ${profile.imageStyle}` });
       
       const response = await ai.models.generateContent({ 
         model: 'gemini-2.5-flash-image', 
         contents: { role: 'user', parts },
-        config: { 
-          systemInstruction: personalizedInstruction,
-          imageConfig: {
-            aspectRatio: profile?.aspectRatio || '1:1'
-          }
-        }
+        config: { systemInstruction: personalizedInstruction }
       });
       
       let imageUrl = null;
@@ -126,7 +120,7 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
 
     try {
       const res = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-latest',
         contents: [{ role: 'user', parts }],
         config: {
           systemInstruction: personalizedInstruction,
@@ -173,13 +167,12 @@ MANDATORY: Address the user as '${profile?.name || 'the seeker'}' where appropri
     parts.push({ text: `Upscale and enhance this image with extreme detail and high resolution. Original prompt/context: ${prompt}` });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-2.5-flash-image',
       contents: { role: 'user', parts },
       config: {
         systemInstruction: personalizedInstruction,
         imageConfig: {
-          aspectRatio: profile?.aspectRatio || "1:1",
-          imageSize: profile?.imageSize || "2K"
+          aspectRatio: "1:1",
         }
       }
     });
@@ -209,7 +202,7 @@ export const translateToPersian = async (text: string): Promise<string> => {
   const ai = getClient();
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-latest',
         contents: `Translate the following reflection into deep, poetic, and professional Persian (فارسی). Maintain the 'Nexus AI' visionary and empowering tone. Only provide the Persian text: \n\n${text}`,
         config: {
           systemInstruction: "You are the Persian linguistic core of Nexus. Translate with soul and depth."
