@@ -10,6 +10,7 @@ import { LiveVoiceAssistant } from './components/LiveVoiceAssistant';
 import { SystemStatus, GenerationMode, AiResponse, Emotion, Attachment, UserProfile } from './types';
 import { generateResponse, upscaleImage } from './services/geminiService';
 import { audioManager } from './utils/audioManager';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const STORAGE_KEY_HISTORY = 'nexus_neural_history';
 const STORAGE_KEY_PROFILE = 'nexus_neural_profile';
@@ -624,6 +625,7 @@ const App: React.FC = () => {
         onClose={() => setShowLive(false)} 
         onSpeakingChange={setIsAssistantSpeaking}
       />
+      <SpeedInsights />
     </div>
   );
 };
